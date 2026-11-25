@@ -12,7 +12,7 @@ if (!window.supabase?.createClient) {
   throw new Error("Supabase JS library is unavailable");
 }
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-let ads=read(STORAGE.ads),favorites=read(STORAGE.favorites),cart=read(STORAGE.cart),orders=read(STORAGE.orders);
+let ads=[],favorites=read(STORAGE.favorites),cart=read(STORAGE.cart),orders=read(STORAGE.orders);
 if(!Array.isArray(ads))ads=[];if(!Array.isArray(favorites))favorites=[];if(!Array.isArray(cart))cart=[];if(!Array.isArray(orders))orders=[];
 let currentUser=null;
 let activeCategory="Barchasi",activeType="all",authMode="register",editingAdId=null;
@@ -114,22 +114,47 @@ function startPost(){if(!requireUser())return;editingAdId=null;$("listingForm").
 ["postAdBtn","heroPostBtn","emptyPostBtn","bannerPostBtn"].forEach(id=>$(id).addEventListener("click",startPost));
 $("profilePostBtn").addEventListener("click",()=>{closeModal("profileModal");startPost()});
 
-function readImage(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)})}
+function dbAdToApp(row){
+ return {id:row.id,userId:row.user_id,type:row.listing_type,title:row.title,category:row.category,price:Number(row.price),condition:row.condition,description:row.description,region:row.region,district:row.district,address:row.address,images:Array.isArray(row.images)?row.images:[],phone:row.phone||"",createdAt:new Date(row.created_at).getTime(),updatedAt:new Date(row.updated_at||row.created_at).getTime()};
+}
+async function loadAds(){
+ const {data,error}=await supabaseClient.from("listings").select("*").eq("status","active").order("created_at",{ascending:false});
+ if(error)throw error;
+ ads=(data||[]).map(dbAdToApp);renderAds();
+}
+async function uploadListingImages(files,existingImages=[]){
+ if(!files.length)return existingImages;
+ const urls=[];
+ for(const file of files){
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase().replace(/[^a-z0-9]/g,"")||"jpg";
+  const path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+  const {error}=await supabaseClient.storage.from("oluzb-images").upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+  if(error)throw error;
+  const {data}=supabaseClient.storage.from("oluzb-images").getPublicUrl(path);urls.push(data.publicUrl);
+ }
+ return [...existingImages,...urls];
+}
 $("adImages").addEventListener("change",()=>{const box=$("imagePreview");box.innerHTML="";Array.from($("adImages").files).slice(0,6).forEach(file=>{const img=document.createElement("img");img.src=URL.createObjectURL(file);box.append(img)})});
 $("listingForm").addEventListener("submit",async e=>{
  e.preventDefault();if(!requireUser())return;
  const files=Array.from($("adImages").files);
  if(!editingAdId&&(files.length<1||files.length>6)){alert("1 tadan 6 tagacha rasm tanlang.");return}
  if(files.length>6||files.some(f=>!f.type.startsWith("image/")||f.size>1.5*1024*1024)){alert("Faqat rasm tanlang. Har bir rasm 1.5 MB dan oshmasin.");return}
+ const submitBtn=$("listingForm").querySelector("button[type=submit],button:not([type])");
+ if(submitBtn){submitBtn.disabled=true;submitBtn.textContent="Yuklanmoqda..."}
  try{
   const old=ads.find(a=>a.id===editingAdId);
-  const images=files.length?await Promise.all(files.map(readImage)):(old?.images||[]);
+  const images=await uploadListingImages(files,old?.images||[]);
   if(!images.length){alert("Kamida bitta rasm tanlang.");return}
-  const ad={id:editingAdId||"ad"+Date.now(),userId:currentUser.id,type:$("adType").value,title:$("adTitle").value.trim(),category:$("adCategory").value,price:Number($("adPrice").value),condition:$("adCondition").value,description:$("adDescription").value.trim(),region:$("adRegion").value,district:$("adDistrict").value.trim(),address:$("adAddress").value.trim(),images,phone:currentUser.phone,createdAt:old?.createdAt||Date.now(),updatedAt:Date.now()};
+  const ad={user_id:currentUser.id,listing_type:$("adType").value,title:$("adTitle").value.trim(),category:$("adCategory").value,price:Number($("adPrice").value),condition:$("adCondition").value,description:$("adDescription").value.trim(),region:$("adRegion").value,district:$("adDistrict").value.trim(),address:$("adAddress").value.trim(),images,phone:currentUser.phone,status:"active"};
   if(!ad.title||!ad.description||!ad.price||ad.price<1||!ad.region||!ad.district||!ad.address){alert("Barcha majburiy maydonlarni to'ldiring.");return}
-  const next=editingAdId?ads.map(a=>a.id===editingAdId?ad:a):[ad,...ads];
-  if(!write(STORAGE.ads,next))return;ads=next;editingAdId=null;$("listingForm").reset();$("imagePreview").innerHTML="";closeModal("listingModal");renderAds();alert("E'lon saqlandi!");
- }catch(err){console.error(err);alert("Rasmlarni yuklashda xatolik yuz berdi.")}
+  let result;
+  if(editingAdId)result=await supabaseClient.from("listings").update(ad).eq("id",editingAdId).eq("user_id",currentUser.id).select().single();
+  else result=await supabaseClient.from("listings").insert(ad).select().single();
+  if(result.error)throw result.error;
+  editingAdId=null;$("listingForm").reset();$("adImages").required=true;$("imagePreview").innerHTML="";closeModal("listingModal");await loadAds();alert("E'lon Supabase bazasiga saqlandi va hammaga ko'rinadi!");
+ }catch(err){console.error("E'lon saqlash xatosi:",err);alert("E'lonni saqlab bo'lmadi: "+(err.message||"Noma'lum xatolik"))}
+ finally{if(submitBtn){submitBtn.disabled=false;submitBtn.textContent="E'lonni joylashtirish"}}
 });
 
 function filteredAds(){
@@ -180,7 +205,13 @@ function editAd(id){
  $("adType").value=ad.type;$("adTitle").value=ad.title;$("adCategory").value=ad.category;$("adPrice").value=ad.price;$("adCondition").value=ad.condition;$("adDescription").value=ad.description;$("adRegion").value=ad.region;$("adDistrict").value=ad.district;$("adAddress").value=ad.address;$("adImages").required=false;
  $("imagePreview").innerHTML="";(ad.images||[]).forEach(src=>{const im=document.createElement("img");im.src=src;$("imagePreview").append(im)});openModal("listingModal");
 }
-function deleteAd(id){if(!confirm("Ushbu e'lonni o'chirmoqchimisiz?"))return;ads=ads.filter(a=>a.id!==id);favorites=favorites.filter(x=>x!==id);cart=cart.filter(x=>x.id!==id);write(STORAGE.ads,ads);write(STORAGE.favorites,favorites);write(STORAGE.cart,cart);renderAds();showProfile()}
+async function deleteAd(id){
+ if(!confirm("Ushbu e'lonni o'chirmoqchimisiz?"))return;
+ const {error}=await supabaseClient.from("listings").delete().eq("id",id).eq("user_id",currentUser.id);
+ if(error){alert("E'lonni o'chirib bo'lmadi: "+error.message);return}
+ favorites=favorites.filter(x=>x!==id);cart=cart.filter(x=>x.id!==id);write(STORAGE.favorites,favorites);write(STORAGE.cart,cart);
+ await loadAds();showProfile();
+}
 $("logoutBtn").addEventListener("click",async()=>{
  const {error}=await supabaseClient.auth.signOut();
  if(error){alert("Hisobdan chiqishda xatolik: "+error.message);return;}
@@ -228,3 +259,4 @@ $("locationForm").addEventListener("submit",e=>{
 });
 
 updateHeader();renderAds();renderCart();setAuthMode("register");restoreAuthSession();
+loadAds().catch(err=>{console.error("E'lonlarni yuklash xatosi:",err);alert("E'lonlarni bazadan yuklab bo'lmadi: "+err.message)});
