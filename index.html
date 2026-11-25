@@ -85,8 +85,9 @@
   <div class="auth-tabs"><button id="registerTab" class="tab active">Ro'yxatdan o'tish</button><button id="loginTab" class="tab">Kirish</button></div>
   <form id="authForm">
     <label id="nameField">Ism va familiya<input id="userName" autocomplete="name" placeholder="Ismingiz" required></label>
+    <label>Email manzil<input id="userEmail" type="email" autocomplete="email" placeholder="example@gmail.com" required></label>
     <label>Telefon raqam<input id="userPhone" type="tel" placeholder="+998 90 123 45 67" required></label>
-    <label>Parol<input id="userPassword" type="password" minlength="4" placeholder="Kamida 4 ta belgi" required></label>
+    <label>Parol<input id="userPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Kamida 8 ta belgi" required></label>
     <div id="registerLocationFields" class="stack">
       <label>Viloyat / shahar<select id="userRegion" required></select></label>
       <label>Tuman / shahar<input id="userDistrict" placeholder="Masalan, Andijon shahri" required></label>
