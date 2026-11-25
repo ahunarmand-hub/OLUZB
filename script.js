@@ -110,7 +110,7 @@ async function restoreAuthSession(){
  }else{currentUser=null;updateHeader();}
 }
 function requireUser(){if(currentUser)return true;setAuthMode("register");openModal("authModal");alert("Davom etish uchun avval ro'yxatdan o'ting.");return false}
-function startPost(){if(!requireUser())return;editingAdId=null;$("listingForm").reset();$("imagePreview").innerHTML="";$("listingModalTitle").textContent="Yangi mahsulot / e'lon";const l=currentUser.location||{};$("adRegion").value=l.region||"";$("adDistrict").value=l.district||"";$("adAddress").value=l.address||"";openModal("listingModal")}
+function startPost(){if(!requireUser())return;editingAdId=null;$("listingForm").reset();$("adImages").required=true;$("imagePreview").innerHTML="";$("listingModalTitle").textContent="Yangi mahsulot / e'lon";const l=currentUser.location||{};$("adRegion").value=l.region||"";$("adDistrict").value=l.district||"";$("adAddress").value=l.address||"";openModal("listingModal")}
 ["postAdBtn","heroPostBtn","emptyPostBtn","bannerPostBtn"].forEach(id=>$(id).addEventListener("click",startPost));
 $("profilePostBtn").addEventListener("click",()=>{closeModal("profileModal");startPost()});
 
