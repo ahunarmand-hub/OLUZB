@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="OLUZB — O'zbekistonning onlayn savdo va e'lonlar platformasi.">
+  <meta name="theme-color" content="#C65B48">
+  <title>OLUZB — Hammasi bir joyda!</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="container header-top">
+    <a class="logo" href="#"><span>OLUZB</span><small>HAMMASI BIR JOYDA!</small></a>
+    <div class="search"><input id="searchInput" type="search" placeholder="Telefon, kiyim, avtomobil..."><button id="searchBtn">Qidirish</button></div>
+    <div class="header-actions">
+      <button class="text-btn" id="favoritesToggle">♡ Sevimlilar <b id="favoriteCount">0</b></button>
+      <button class="text-btn" id="cartToggle">🛒 Savat <b id="cartCount">0</b></button>
+      <button class="text-btn" id="accountBtn">👤 Kirish</button>
+      <button class="primary-btn" id="postAdBtn">＋ E'lon berish</button>
+    </div>
+  </div>
+  <nav class="container nav">
+    <a href="#">Bosh sahifa</a><a href="#categories">Kategoriyalar</a><a href="#listings">Mahsulotlar va e'lonlar</a>
+    <button id="locationBtn" class="location-link">📍 <span id="headerLocation">Manzilni tanlang</span></button>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div class="hero-copy"><span class="eyebrow">O'ZBEKISTON BO'YLAB SAVDO</span>
+      <h1>Kerakli narsangiz — OLUZB'da!</h1>
+      <p>Do'konlardan yangi mahsulotlar xarid qiling yoki OLX kabi o'zingiz e'lon joylashtiring. Hammasi bir joyda.</p>
+      <div class="hero-actions"><button class="primary-btn" id="heroPostBtn">Bepul e'lon joylashtirish</button><a class="light-link" href="#listings">Mahsulotlarni ko'rish →</a></div>
+    </div><div class="hero-art">🛍️</div>
+  </section>
+
+  <section class="benefits">
+    <div><span>🛒</span><b>Qulay xarid</b><small>Mahsulotlarni savatga qo'shing</small></div>
+    <div><span>📍</span><b>Hududingiz bo'yicha</b><small>O'zingizga yaqin e'lonlar</small></div>
+    <div><span>🏪</span><b>Do'kon va sotuvchilar</b><small>O'z mahsulotingizni soting</small></div>
+    <div><span>🤝</span><b>Bevosita aloqa</b><small>E'lon egasi bilan bog'laning</small></div>
+  </section>
+
+  <section id="categories" class="section">
+    <div class="section-heading"><div><span class="eyebrow">BO'LIMLAR</span><h2>Kategoriyalar</h2></div></div>
+    <div class="categories" id="categoryList">
+      <button class="category active" data-category="Barchasi"><span>▦</span>Barchasi</button>
+      <button class="category" data-category="Telefonlar"><span>📱</span>Telefonlar</button>
+      <button class="category" data-category="Elektronika"><span>💻</span>Elektronika</button>
+      <button class="category" data-category="Kiyim-kechak"><span>👕</span>Kiyim-kechak</button>
+      <button class="category" data-category="Uy-ro‘zg‘or"><span>🏠</span>Uy-ro‘zg‘or</button>
+      <button class="category" data-category="Go‘zallik"><span>💄</span>Go‘zallik</button>
+      <button class="category" data-category="Bolalar"><span>🧸</span>Bolalar</button>
+      <button class="category" data-category="Avtomobil"><span>🚗</span>Avtomobil</button>
+      <button class="category" data-category="Sport"><span>⚽</span>Sport</button>
+      <button class="category" data-category="Boshqa"><span>📦</span>Boshqa</button>
+    </div>
+  </section>
+
+  <section id="listings" class="section">
+    <div class="section-heading listings-heading">
+      <div><span class="eyebrow">OLUZB MARKETPLACE</span><h2>Mahsulotlar va e'lonlar</h2></div>
+      <div class="listing-controls">
+        <div class="type-tabs" id="typeTabs">
+          <button class="type-tab active" data-type="all">Barchasi</button>
+          <button class="type-tab" data-type="shop">Do'kon mahsulotlari</button>
+          <button class="type-tab" data-type="classified">E'lonlar</button>
+        </div>
+        <label class="sort-label">Saralash<select id="sortSelect"><option value="new">Avval yangilari</option><option value="cheap">Arzonidan</option><option value="expensive">Qimmatidan</option></select></label>
+      </div>
+    </div>
+    <div id="productList" class="products"></div>
+    <div id="emptyState" class="empty-state"><div class="empty-icon">📦</div><h3>Hozircha mahsulotlar mavjud emas</h3><p>Birinchi bo'lib mahsulot yoki e'lon joylashtiring.</p><button class="primary-btn" id="emptyPostBtn">E'lon joylashtirish</button></div>
+    <p id="noResults" class="empty-note" hidden>Qidiruvingiz bo'yicha mahsulot topilmadi.</p>
+  </section>
+
+  <section class="seller-banner"><div><span class="eyebrow">OLUZB BILAN SAVDO QILING</span><h2>Mahsulotingizni xaridorlarga taklif qiling</h2><p>Do'kon mahsuloti yoki oddiy e'lon — tanlov sizdan.</p></div><button class="light-btn" id="bannerPostBtn">E'lon berish</button></section>
+</main>
+<footer><div class="container footer-inner"><a class="logo footer-logo" href="#"><span>OLUZB</span><small>HAMMASI BIR JOYDA!</small></a><p>© 2026 OLUZB. Barcha huquqlar himoyalangan.</p><small>Sinov versiyasi</small></div></footer>
+
+<!-- AUTH -->
+<div class="overlay" id="authModal" aria-hidden="true"><section class="modal">
+  <button class="close-btn" data-close="authModal">×</button><span class="eyebrow">SHAXSIY KABINET</span><h2 id="authTitle">Ro'yxatdan o'tish</h2>
+  <div class="auth-tabs"><button id="registerTab" class="tab active">Ro'yxatdan o'tish</button><button id="loginTab" class="tab">Kirish</button></div>
+  <form id="authForm">
+    <label id="nameField">Ism va familiya<input id="userName" autocomplete="name" placeholder="Ismingiz" required></label>
+    <label>Telefon raqam<input id="userPhone" type="tel" placeholder="+998 90 123 45 67" required></label>
+    <label>Parol<input id="userPassword" type="password" minlength="4" placeholder="Kamida 4 ta belgi" required></label>
+    <div id="registerLocationFields" class="stack">
+      <label>Viloyat / shahar<select id="userRegion" required></select></label>
+      <label>Tuman / shahar<input id="userDistrict" placeholder="Masalan, Andijon shahri" required></label>
+      <label>Mahalla / ko'cha<input id="userAddress" placeholder="Aniq manzil" required></label>
+    </div>
+    <button class="primary-btn full" id="authSubmit">Ro'yxatdan o'tish</button>
+  </form><p class="form-hint">Sinov versiyasida ma'lumotlar faqat shu brauzerda saqlanadi.</p>
+</section></div>
+
+<!-- POST -->
+<div class="overlay" id="listingModal" aria-hidden="true"><section class="modal wide-modal">
+  <button class="close-btn" data-close="listingModal">×</button><span class="eyebrow">SOTUVCHI BO'LISH</span><h2 id="listingModalTitle">Yangi mahsulot / e'lon</h2>
+  <form id="listingForm">
+    <div class="form-grid">
+      <label class="full-field">Joylashtirish turi<select id="adType"><option value="classified">Oddiy e'lon — sotuvchi bilan kelishish</option><option value="shop">Do'kon mahsuloti — savat orqali xarid</option></select></label>
+      <label>Mahsulot nomi<input id="adTitle" maxlength="90" required placeholder="Masalan, iPhone 13"></label>
+      <label>Kategoriya<select id="adCategory" required></select></label>
+      <label>Narxi (so'm)<input id="adPrice" type="number" min="1" step="1" required placeholder="2500000"></label>
+      <label>Holati<select id="adCondition"><option>Yangi</option><option>Ishlatilgan</option></select></label>
+      <label class="full-field">Mahsulot haqida ma'lumot<textarea id="adDescription" rows="4" maxlength="1500" required placeholder="Mahsulot holati va xususiyatlari..."></textarea></label>
+      <label>Viloyat / shahar<select id="adRegion" required></select></label>
+      <label>Tuman / shahar<input id="adDistrict" required placeholder="Tuman yoki shahar"></label>
+      <label class="full-field">Aniq manzil<input id="adAddress" required placeholder="Mahalla, ko'cha yoki mo'ljal"></label>
+      <label class="full-field">Mahsulot rasmlari (1–6 ta)<input id="adImages" type="file" accept="image/*" multiple required><small>Har bir rasm 1.5 MB gacha.</small></label>
+    </div>
+    <div id="imagePreview" class="image-preview"></div><button class="primary-btn full">E'lonni joylashtirish</button>
+  </form>
+</section></div>
+
+<!-- LOCATION -->
+<div class="overlay" id="locationModal" aria-hidden="true"><section class="modal">
+  <button class="close-btn" data-close="locationModal">×</button><span class="eyebrow">HUDUDINGIZ</span><h2>Manzilni tanlang</h2>
+  <form id="locationForm" class="stack"><label>Viloyat / shahar<select id="locationRegion" required></select></label><label>Tuman / shahar<input id="locationDistrict" required placeholder="Tuman yoki shahar"></label><label>Mahalla / ko'cha<input id="locationAddress" placeholder="Ixtiyoriy"></label><button class="primary-btn full">Manzilni saqlash</button></form>
+</section></div>
+
+<!-- PROFILE -->
+<div class="overlay" id="profileModal" aria-hidden="true"><section class="modal wide-modal">
+  <button class="close-btn" data-close="profileModal">×</button><span class="eyebrow">SHAXSIY KABINET</span><h2 id="profileName">Mening kabinetim</h2><div id="profileDetails" class="profile-details"></div>
+  <div class="profile-actions"><button id="profilePostBtn" class="primary-btn">＋ E'lon berish</button><button id="logoutBtn" class="outline-btn">Hisobdan chiqish</button></div>
+  <h3 class="subheading">Mening e'lonlarim</h3><div id="myListings" class="my-listings"></div>
+  <h3 class="subheading">Buyurtmalarim</h3><div id="myOrders" class="my-listings"></div>
+</section></div>
+
+<!-- FAVORITES -->
+<div class="overlay" id="favoritesModal" aria-hidden="true"><section class="modal wide-modal"><button class="close-btn" data-close="favoritesModal">×</button><span class="eyebrow">SAQLANGANLAR</span><h2>Sevimlilar</h2><div id="favoriteList" class="my-listings"></div></section></div>
+
+<!-- CART -->
+<div class="overlay" id="cartModal" aria-hidden="true"><section class="modal wide-modal"><button class="close-btn" data-close="cartModal">×</button><span class="eyebrow">XARIDLAR</span><h2>Savat</h2><div id="cartItems" class="cart-items"></div><div class="cart-summary"><strong>Jami: <span id="cartTotal">0 so'm</span></strong><button id="checkoutBtn" class="primary-btn">Buyurtma berish</button></div></section></div>
+
+<!-- CHECKOUT -->
+<div class="overlay" id="checkoutModal" aria-hidden="true"><section class="modal"><button class="close-btn" data-close="checkoutModal">×</button><span class="eyebrow">BUYURTMA</span><h2>Buyurtmani rasmiylashtirish</h2>
+  <form id="checkoutForm" class="stack"><label>Ism<input id="checkoutName" required></label><label>Telefon<input id="checkoutPhone" type="tel" required></label><label>Yetkazib berish manzili<textarea id="checkoutAddress" rows="3" required></textarea></label><label>To'lov turi<select id="paymentMethod"><option>Yetkazilganda to'lash</option><option>Naqd pul</option></select></label><button class="primary-btn full">Buyurtmani tasdiqlash</button></form>
+  <p class="form-hint">Bu demo versiyada haqiqiy to'lov yechilmaydi va buyurtma faqat brauzerda qayd etiladi.</p>
+</section></div>
+
+<!-- DETAILS -->
+<div class="overlay" id="detailsModal" aria-hidden="true"><section class="modal wide-modal"><button class="close-btn" data-close="detailsModal">×</button><div id="detailsContent"></div></section></div>
+<script src="script.js"></script>
+</body></html>
