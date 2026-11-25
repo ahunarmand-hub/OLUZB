@@ -5,9 +5,16 @@ const categories=["Telefonlar","Elektronika","Kiyim-kechak","Uy-ro‘zg‘or","G
 const regions=["Andijon viloyati","Buxoro viloyati","Farg‘ona viloyati","Jizzax viloyati","Xorazm viloyati","Namangan viloyati","Navoiy viloyati","Qashqadaryo viloyati","Qoraqalpog‘iston Respublikasi","Samarqand viloyati","Sirdaryo viloyati","Surxondaryo viloyati","Toshkent viloyati","Toshkent shahri"];
 const read=(key,fallback=[])=>{try{const v=JSON.parse(localStorage.getItem(key));return v??fallback}catch{return fallback}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch{alert("Brauzer xotirasi to'ldi. Rasmlar hajmini kamaytiring yoki ayrim e'lonlarni o'chiring.");return false}};
-let users=read(STORAGE.users),ads=read(STORAGE.ads),favorites=read(STORAGE.favorites),cart=read(STORAGE.cart),orders=read(STORAGE.orders);
-if(!Array.isArray(users))users=[];if(!Array.isArray(ads))ads=[];if(!Array.isArray(favorites))favorites=[];if(!Array.isArray(cart))cart=[];if(!Array.isArray(orders))orders=[];
-let currentUserId=localStorage.getItem(STORAGE.current)||"",currentUser=users.find(u=>u.id===currentUserId)||null;
+const SUPABASE_URL = "https://zesghyuircjttqevwnzu.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_i6eIcwib6XbA4-w75FLgfQ_LT3o_qmP";
+if (!window.supabase?.createClient) {
+  alert("Supabase kutubxonasi yuklanmadi. Internet aloqasini tekshiring.");
+  throw new Error("Supabase JS library is unavailable");
+}
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+let ads=read(STORAGE.ads),favorites=read(STORAGE.favorites),cart=read(STORAGE.cart),orders=read(STORAGE.orders);
+if(!Array.isArray(ads))ads=[];if(!Array.isArray(favorites))favorites=[];if(!Array.isArray(cart))cart=[];if(!Array.isArray(orders))orders=[];
+let currentUser=null;
 let activeCategory="Barchasi",activeType="all",authMode="register",editingAdId=null;
 
 function formatPrice(n){return Number(n||0).toLocaleString("uz-UZ")+" so'm"}
@@ -34,24 +41,74 @@ function setAuthMode(mode){
  $("authTitle").textContent=reg?"Ro'yxatdan o'tish":"Hisobga kirish";
  $("registerTab").classList.toggle("active",reg);$("loginTab").classList.toggle("active",!reg);
  $("registerLocationFields").hidden=!reg;$("nameField").hidden=!reg;
- ["userName","userRegion","userDistrict","userAddress"].forEach(id=>$(id).required=reg);
+ $("userPhone").closest("label").hidden=!reg;
+ ["userName","userPhone","userRegion","userDistrict","userAddress"].forEach(id=>$(id).required=reg);
+ $("userEmail").required=true;
+ $("userPassword").autocomplete=reg?"new-password":"current-password";
  $("authSubmit").textContent=reg?"Ro'yxatdan o'tish":"Kirish";
 }
 $("registerTab").addEventListener("click",()=>setAuthMode("register"));$("loginTab").addEventListener("click",()=>setAuthMode("login"));
 $("accountBtn").addEventListener("click",()=>{if(currentUser)showProfile();else{setAuthMode("register");openModal("authModal")}});
-$("authForm").addEventListener("submit",e=>{
- e.preventDefault();const phone=$("userPhone").value.trim(),password=$("userPassword").value;
- if(authMode==="register"){
-  if(users.some(u=>u.phone===phone)){alert("Bu telefon raqam bilan hisob mavjud. Kirish bo'limidan foydalaning.");return}
-  const user={id:"u"+Date.now(),name:$("userName").value.trim(),phone,password,location:{region:$("userRegion").value,district:$("userDistrict").value.trim(),address:$("userAddress").value.trim()}};
-  const next=[...users,user];if(!write(STORAGE.users,next))return;users=next;loginAs(user);closeModal("authModal");$("authForm").reset();alert("Ro'yxatdan o'tdingiz. Endi e'lon joylashtirishingiz mumkin.");
- }else{
-  const user=users.find(u=>u.phone===phone&&u.password===password);
-  if(!user){alert("Telefon raqam yoki parol noto'g'ri.");return}
-  loginAs(user);closeModal("authModal");$("authForm").reset();alert("Hisobingizga kirdingiz.");
+async function loadUserProfile(authUser){
+ const meta=authUser.user_metadata||{};
+ const payload={id:authUser.id,full_name:meta.full_name||authUser.email?.split("@")[0]||"OLUZB foydalanuvchisi",phone:meta.phone||"",region:meta.region||"",district:meta.district||"",address:meta.address||""};
+ let {data,error}=await supabaseClient.from("profiles").select("id,full_name,phone,region,district,address").eq("id",authUser.id).maybeSingle();
+ if(error) throw error;
+ if(!data){
+  const inserted=await supabaseClient.from("profiles").upsert(payload).select("id,full_name,phone,region,district,address").single();
+  if(inserted.error) throw inserted.error;
+  data=inserted.data;
+ }
+ currentUser={id:data.id,name:data.full_name||payload.full_name,phone:data.phone||"",email:authUser.email||"",location:{region:data.region||"",district:data.district||"",address:data.address||""}};
+ updateHeader();
+}
+$("authForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const email=$("userEmail").value.trim().toLowerCase(),password=$("userPassword").value;
+ const button=$("authSubmit");button.disabled=true;button.textContent="Kuting...";
+ try{
+  if(authMode==="register"){
+   const metadata={full_name:$("userName").value.trim(),phone:$("userPhone").value.trim(),region:$("userRegion").value,district:$("userDistrict").value.trim(),address:$("userAddress").value.trim()};
+   const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:metadata}});
+   if(error)throw error;
+   if(data.session){
+    await loadUserProfile(data.user);
+    closeModal("authModal");$("authForm").reset();
+    alert("Ro'yxatdan o'tdingiz! OLUZB hisobingiz yaratildi.");
+   }else{
+    alert("Ro'yxatdan o'tish so'rovi qabul qilindi. Emailingizga tasdiqlash xati yuborildi. Xatdagi havolani bosing, keyin saytga kiring.");
+    setAuthMode("login");
+   }
+  }else{
+   const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   await loadUserProfile(data.user);
+   closeModal("authModal");$("authForm").reset();
+   alert("Hisobingizga muvaffaqiyatli kirdingiz.");
+  }
+ }catch(err){
+  console.error("OLUZB auth:",err);
+  alert("Xatolik: "+(err.message||"Amalni bajarib bo'lmadi."));
+ }finally{
+  button.disabled=false;button.textContent=authMode==="register"?"Ro'yxatdan o'tish":"Kirish";
  }
 });
-function loginAs(user){currentUser=user;currentUserId=user.id;localStorage.setItem(STORAGE.current,user.id);updateHeader()}
+supabaseClient.auth.onAuthStateChange((_event,session)=>{
+ setTimeout(async()=>{
+  try{
+   if(session?.user) await loadUserProfile(session.user);
+   else{currentUser=null;updateHeader();}
+  }catch(err){console.error("Profilni yuklashda xatolik:",err);alert("Profil ma'lumotlarini yuklab bo'lmadi: "+err.message);}
+ },0);
+});
+async function restoreAuthSession(){
+ const {data,error}=await supabaseClient.auth.getSession();
+ if(error){console.error(error);return;}
+ if(data.session?.user){
+  try{await loadUserProfile(data.session.user);}
+  catch(err){console.error(err);alert("Profilni yuklashda xatolik: "+err.message);}
+ }else{currentUser=null;updateHeader();}
+}
 function requireUser(){if(currentUser)return true;setAuthMode("register");openModal("authModal");alert("Davom etish uchun avval ro'yxatdan o'ting.");return false}
 function startPost(){if(!requireUser())return;editingAdId=null;$("listingForm").reset();$("imagePreview").innerHTML="";$("listingModalTitle").textContent="Yangi mahsulot / e'lon";const l=currentUser.location||{};$("adRegion").value=l.region||"";$("adDistrict").value=l.district||"";$("adAddress").value=l.address||"";openModal("listingModal")}
 ["postAdBtn","heroPostBtn","emptyPostBtn","bannerPostBtn"].forEach(id=>$(id).addEventListener("click",startPost));
@@ -124,7 +181,11 @@ function editAd(id){
  $("imagePreview").innerHTML="";(ad.images||[]).forEach(src=>{const im=document.createElement("img");im.src=src;$("imagePreview").append(im)});openModal("listingModal");
 }
 function deleteAd(id){if(!confirm("Ushbu e'lonni o'chirmoqchimisiz?"))return;ads=ads.filter(a=>a.id!==id);favorites=favorites.filter(x=>x!==id);cart=cart.filter(x=>x.id!==id);write(STORAGE.ads,ads);write(STORAGE.favorites,favorites);write(STORAGE.cart,cart);renderAds();showProfile()}
-$("logoutBtn").addEventListener("click",()=>{localStorage.removeItem(STORAGE.current);currentUser=null;currentUserId="";closeModal("profileModal");updateHeader();alert("Hisobdan chiqdingiz.")});
+$("logoutBtn").addEventListener("click",async()=>{
+ const {error}=await supabaseClient.auth.signOut();
+ if(error){alert("Hisobdan chiqishda xatolik: "+error.message);return;}
+ currentUser=null;closeModal("profileModal");updateHeader();alert("Hisobdan chiqdingiz.");
+});
 
 function showAdDetails(ad){
  $("detailsContent").innerHTML="";
@@ -166,4 +227,4 @@ $("locationForm").addEventListener("submit",e=>{
  if(!write(STORAGE.location,loc))return;updateHeader();closeModal("locationModal");renderAds();
 });
 
-updateHeader();renderAds();renderCart();setAuthMode("register");
+updateHeader();renderAds();renderCart();setAuthMode("register");restoreAuthSession();
